@@ -1,0 +1,5 @@
+kafka-trunk (0) unstable; urgency=low
+
+  * Build trunk
+
+ -- Norbert Hu <norbert@uber.com>  Fri, 03 Apr 2015 00:00:00 +0000
