@@ -1,0 +1,6 @@
+{
+    "project_id": "kafka-trunk",
+    "conduit_uri": "https://code.uberinternal.com/",
+    "git.default-relative-commit": "origin/trunk",
+    "arc.land.onto.default": "trunk"
+}
