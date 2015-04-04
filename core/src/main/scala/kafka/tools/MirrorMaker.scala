@@ -21,6 +21,7 @@ import java.util
 import java.util.concurrent.{TimeUnit, CountDownLatch}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 import java.util.{Collections, Properties}
+import scala.io.Source
 
 import com.yammer.metrics.core.Gauge
 import joptsimple.OptionParser
@@ -66,6 +67,7 @@ object MirrorMaker extends Logging with KafkaMetricsGroup {
   private var offsetCommitIntervalMs = 0
   private var abortOnSendFailure: Boolean = true
   @volatile private var exitingOnSendFailure: Boolean = false
+  private var topicMappings = Map.empty[String, String]
 
   // If a message send failed after retries are exhausted. The offset of the messages will also be removed from
   // the unacked offset list to avoid offset commit being stuck on that offset. In this case, the offset of that
@@ -149,6 +151,12 @@ object MirrorMaker extends Logging with KafkaMetricsGroup {
       .ofType(classOf[String])
       .defaultsTo("true")
 
+    val topicMappingsOpt = parser.accepts("topic.mappings",
+      "Path to file containing line deliminated mappings of topics to consume from and produce to.")
+      .withRequiredArg()
+      .describedAs("Path to mappings file")
+      .ofType(classOf[String])
+
     val helpOpt = parser.accepts("help", "Print this message.")
 
     if (args.length == 0)
@@ -227,6 +235,22 @@ object MirrorMaker extends Logging with KafkaMetricsGroup {
       new Whitelist(options.valueOf(whitelistOpt))
     else
       new Blacklist(options.valueOf(blacklistOpt))
+
+    // initialize topic mappings for rewriting topic names between consuming side and producing side
+    topicMappings = if (options.has(topicMappingsOpt)) {
+      val topicMappingsFile = options.valueOf(topicMappingsOpt)
+      val topicMappingPattern = """\s*(\S+)\s+(\S+)\s*""".r
+      Source.fromFile(topicMappingsFile).getLines().flatMap(_ match {
+        case topicMappingPattern(consumerTopic, producerTopic) => {
+          info("Topic mapping: '" + consumerTopic + "' -> '" + producerTopic + "'")
+          Some(consumerTopic -> producerTopic)
+        }
+        case line => {
+          error("Invalid mapping '" + line + "'")
+          None
+        }
+      }).toMap
+    } else Map.empty[String, String]
 
     // Create mirror maker threads
     mirrorMakerThreads = (0 until numStreams) map ( i =>
@@ -442,7 +466,9 @@ object MirrorMaker extends Logging with KafkaMetricsGroup {
 
   private object defaultMirrorMakerMessageHandler extends MirrorMakerMessageHandler {
     override def handle(record: MessageAndMetadata[Array[Byte], Array[Byte]]): util.List[ProducerRecord[Array[Byte], Array[Byte]]] = {
-      Collections.singletonList(new ProducerRecord[Array[Byte], Array[Byte]](record.topic, record.key(), record.message()))
+      // rewrite topic between consuming side and producing side
+      val topic = topicMappings.get(record.topic).getOrElse(record.topic)
+      Collections.singletonList(new ProducerRecord[Array[Byte], Array[Byte]](topic, record.key(), record.message()))
     }
   }
 
