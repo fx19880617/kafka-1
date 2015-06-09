@@ -24,8 +24,6 @@ allprojects {
   apply plugin: 'idea'
   repositories {
     mavenCentral()
-    maven { url 'http://artifactory.uber.internal:4587/artifactory/libs-release-local/' }
-    maven { url 'http://artifactory.uber.internal:4587/artifactory/libs-snapshot-local/' }
   }
 }
 
@@ -315,10 +313,6 @@ project(':migration') {
     compile 'net.kencochrane.raven:raven-log4j:6.0.0'
     compile 'io.dropwizard.metrics:metrics-core:3.1.1'
     compile 'io.dropwizard.metrics:metrics-graphite:3.1.1'
-    compile('com.uber:chaperone:1.2.1') {
-      exclude group: 'org.scala-lang'
-      exclude module: 'kafka_2.9.2'
-    }
 
     testCompile 'junit:junit:4.1'
     testCompile 'org.mockito:mockito-core:1.10.19'

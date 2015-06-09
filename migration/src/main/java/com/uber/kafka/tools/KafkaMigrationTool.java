@@ -10,7 +10,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -20,21 +19,16 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import com.uber.data.chaperone.config.AuditConfig;
-import com.uber.data.chaperone.producer.AuditProducer;
 import joptsimple.ArgumentAcceptingOptionSpec;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
 import joptsimple.OptionSpecBuilder;
-
+import kafka.javaapi.producer.Producer;
+import kafka.producer.KeyedMessage;
+import kafka.producer.ProducerConfig;
 import kafka.utils.Utils;
 
-import org.apache.kafka.clients.producer.Callback;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.clients.producer.RecordMetadata;
-import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -66,9 +60,6 @@ public class KafkaMigrationTool {
     private static final String KAFKA_07_TOPIC_FILTER_CLASS_NAME = "kafka.consumer.TopicFilter";
     private static final String KAFKA_07_BLACK_LIST_CLASS_NAME = "kafka.consumer.Blacklist";
     private static final String KAFKA_07_CONSUMER_GROUP_PROPERTY = "groupid";
-
-    private static final Map<String, AuditProducer> auditProducerMap = new HashMap<String, AuditProducer>();
-    private static Meter exceptionRate;
 
     private static Class<?> KafkaStaticConsumer_07 = null;
     private static Class<?> ConsumerConfig_07 = null;
@@ -303,27 +294,6 @@ public class KafkaMigrationTool {
         context.setMetrics(metrics);
 
         try {
-            // Register exception rate metric
-            String exceptionRateName = MigrationMetrics.name("audit_exception_rate");
-            exceptionRate = context.getMetrics().getRegistry().meter(exceptionRateName);
-
-            // Display common config used for auditing
-            logger.info("Schema service path : " + AuditConfig.SCHEMA_SERVICE_PATH);
-            logger.info("Schema service host : " + AuditConfig.SCHEMA_SERVICE_HOST);
-            logger.info("Schema service port : " + AuditConfig.SCHEMA_SERVICE_PORT);
-            logger.info("White listed topics: " + AuditConfig.WHITE_LISTED_TOPICS);
-            for (String topic : AuditConfig.WHITE_LISTED_TOPICS) {
-                logger.info("Initializing Audit producer for topic: " + topic);
-                try {
-                    AuditProducer producer = new AuditProducer(topic);
-                    auditProducerMap.put(topic, producer);
-                } catch (Exception e) {
-                    // Log error and skip auditing for this topic.
-                    logger.error("Unable to initialize Audit producer for topic: " + topic, e);
-                    exceptionRate.mark();
-                }
-            }
-
             File kafkaJar_07 = new File(kafkaJarFile_07);
             File zkClientJar = new File(zkClientJarFile);
             final ParentLastURLClassLoader c1 = new ParentLastURLClassLoader(new URL[]{
@@ -387,7 +357,7 @@ public class KafkaMigrationTool {
             kafkaProducerProperties_08.setProperty("serializer.class", "kafka.serializer.DefaultEncoder");
             // create a producer channel instead
             int queueSize = options.valueOf(queueSizeOpt);
-            ProducerDataChannel<ProducerRecord<byte[], byte[]>> producerDataChannel = new ProducerDataChannel<ProducerRecord<byte[], byte[]>>(context, queueSize);
+            ProducerDataChannel<KeyedMessage<byte[], byte[]>> producerDataChannel = new ProducerDataChannel<KeyedMessage<byte[], byte[]>>(context, queueSize);
             int threadId = 0;
 
             int offsetLagMonitorPeriodSec = options.valueOf(offsetLagMonitorPeriodSecOpt);
@@ -453,23 +423,6 @@ public class KafkaMigrationTool {
                             }
                         }
                     }
-
-                    // Shutdown all the Audit producers
-                    for (Map.Entry<String, AuditProducer> entry : auditProducerMap.entrySet()) {
-                        try {
-                            AuditProducer producer = entry.getValue();
-                            producer.shutdown();
-                        } catch (Exception e) {
-                            // Log and continue
-                            logger.error("Unable to shutdown audit producer for topic: " + entry.getKey(), e);
-                        }
-                    }
-                    try {
-                        AuditProducer.shutdownReporter();
-                    } catch (Exception e) {
-                        logger.error("Unable to shutdown audit reporter", e);
-                    }
-
                     logger.info("Kafka migration tool shutdown successfully");
                 }
             });
@@ -489,9 +442,8 @@ public class KafkaMigrationTool {
             logger.info("Starting " + numProducers + " producer threads");
             for (int i = 0; i < numProducers; i++) {
                 kafkaProducerProperties_08.put("client.id", clientId + "-" + i);
-                KafkaProducer<byte[], byte[]> producer = new KafkaProducer<byte[], byte[]>(kafkaProducerProperties_08,
-                        new ByteArraySerializer(),
-                        new ByteArraySerializer());
+                ProducerConfig producerConfig_08 = new ProducerConfig(kafkaProducerProperties_08);
+                Producer producer = new Producer(producerConfig_08);
                 ProducerThread producerThread = new ProducerThread(
                     context, producerDataChannel, producer, i);
                 producerThread.start();
@@ -590,7 +542,7 @@ public class KafkaMigrationTool {
 
     private static class MigrationThread extends Thread {
         private final Object stream;
-        private final ProducerDataChannel<ProducerRecord<byte[], byte[]>> producerDataChannel;
+        private final ProducerDataChannel<KeyedMessage<byte[], byte[]>> producerDataChannel;
         private final int threadId;
         private final String threadName;
         private final org.apache.log4j.Logger logger;
@@ -602,7 +554,7 @@ public class KafkaMigrationTool {
         private final Meter migrationThreadsThroughput;
 
         MigrationThread(MigrationContext context, Object _stream,
-                        ProducerDataChannel<ProducerRecord<byte[], byte[]>> _producerDataChannel,
+                        ProducerDataChannel<KeyedMessage<byte[], byte[]>> _producerDataChannel,
                         int _threadId) {
             this.context = context;
             stream = _stream;
@@ -639,7 +591,7 @@ public class KafkaMigrationTool {
                         logger.debug("Migration thread " + threadId + " sending message of size " +
                             bytes.length + " to topic " + topic);
                     }
-                    ProducerRecord<byte[], byte[]> producerData = new ProducerRecord<byte[], byte[]>((String)topic, null, bytes);
+                    KeyedMessage<byte[], byte[]> producerData = new KeyedMessage((String)topic, null, bytes);
                     final Timer.Context enqueueCtx = enqueueTimer.time();
                     try {
                         producerDataChannel.sendRequest(producerData);
@@ -686,49 +638,15 @@ public class KafkaMigrationTool {
         }
     }
 
-    /**
-     * Custom callback to audit the data once it has successfully made
-     * its way to Kafka.
-     */
-    static class AuditCallback implements Callback {
-        private final byte[] value;
-
-        public AuditCallback(byte[] _value) {
-            this.value = _value;
-        }
-
-        /**
-         * Audit the data received on successful production to Kafka
-         * @param metadata Contains the topic for this data byte array
-         * @param exception
-         *
-         * Note: Not adding any retries here since the Kafka producer internally does retries
-         */
-        @Override
-        public void onCompletion(RecordMetadata metadata, Exception exception) {
-            if (exception != null) {
-                return;
-            }
-
-            try {
-                AuditProducer auditProducer = auditProducerMap.get(metadata.topic());
-                auditProducer.auditMessage(this.value);
-            } catch (Exception e) {
-                logger.warn("Unable to audit message.", e);
-                exceptionRate.mark();
-            }
-        }
-    }
-
     static class ProducerThread extends Thread {
-        private final ProducerDataChannel<ProducerRecord<byte[], byte[]>> producerDataChannel;
-        private final KafkaProducer<byte[], byte[]> producer;
+        private final ProducerDataChannel<KeyedMessage<byte[], byte[]>> producerDataChannel;
+        private final Producer<byte[], byte[]> producer;
         private final int threadId;
         private final MigrationContext context;
         private String threadName;
         private org.apache.log4j.Logger logger;
         private CountDownLatch shutdownComplete = new CountDownLatch(1);
-        private ProducerRecord<byte[], byte[]> shutdownMessage = new ProducerRecord<byte[], byte[]>("shutdown", null, null);
+        private KeyedMessage<byte[], byte[]> shutdownMessage = new KeyedMessage("shutdown", null, null);
         private final Map<String, String> messagesMeterNames = Maps.newHashMap();
         private final MetricRegistry registry;
         private final Timer dequeueTimer;
@@ -736,8 +654,8 @@ public class KafkaMigrationTool {
         private final Meter producerThreadsThroughput;
 
         public ProducerThread(MigrationContext context,
-                              ProducerDataChannel<ProducerRecord<byte[], byte[]>> _producerDataChannel,
-                              KafkaProducer<byte[], byte[]> _producer, int _threadId) {
+                              ProducerDataChannel<KeyedMessage<byte[], byte[]>> _producerDataChannel,
+                              Producer<byte[], byte[]> _producer, int _threadId) {
             this.context = context;
             producerDataChannel = _producerDataChannel;
             producer = _producer;
@@ -755,7 +673,7 @@ public class KafkaMigrationTool {
         public void run() {
             try{
                 while(!context.failed()) {
-                    ProducerRecord<byte[], byte[]> data = null;
+                    KeyedMessage<byte[], byte[]> data = null;
                     final Timer.Context dequeueCtx = dequeueTimer.time();
                     try {
                          data = producerDataChannel.receiveRequest();
@@ -765,20 +683,12 @@ public class KafkaMigrationTool {
                     if(!data.equals(shutdownMessage)) {
                         final Timer.Context producerSendCtx = producerSendTimer.time();
                         try {
-                            // Audit the messages from topics that have been whitelisted
-                            if (auditProducerMap.containsKey(data.topic())) {
-                                // Note: not using object pooling since this object will be
-                                // in young gen and quickly cleaned up. In addition, Mirrormaker
-                                // also uses the same pattern.
-                                producer.send(data, new AuditCallback(data.value()));
-                            } else {
-                                producer.send(data);
-                            }
+                            producer.send(data);
                         } finally {
                             producerSendCtx.close();
                         }
                         if(logger.isDebugEnabled()) {
-                            logger.debug("Sending message " + new String(data.value()));
+                            logger.debug("Sending message " + new String(data.message()));
                         }
                         String meterName = getMessagesMeterName(messagesMeterNames,
                             "producer", data.topic());
