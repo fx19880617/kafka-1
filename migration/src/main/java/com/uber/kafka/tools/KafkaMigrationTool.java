@@ -29,7 +29,6 @@ import kafka.producer.KeyedMessage;
 import kafka.producer.ProducerConfig;
 import kafka.utils.Utils;
 
-import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.spi.LoggingEvent;
@@ -454,7 +453,7 @@ public class KafkaMigrationTool {
             offsetLagMonitor.start();
 
             // Block while the migration tool is running. We need to call
-            // System.exit(0) below to force trigger the shutdown hook to be
+            // System.exit below to force trigger the shutdown hook to be
             // called since SimpleConsumer internally runs a user thread.
             while (!context.failed()) {
                 Thread.sleep(100L);
@@ -465,7 +464,9 @@ public class KafkaMigrationTool {
             context.setFailed();
         }
 
-        System.exit(0);
+        int errorCode = context.getErrorCode().getValue();
+        logger.info("Error code: " + errorCode);
+        System.exit(errorCode);
     }
 
     private static void checkRequiredArgs(OptionParser parser, OptionSet options, OptionSpec[] required) throws IOException {
@@ -609,10 +610,11 @@ public class KafkaMigrationTool {
                 if (cause != null &&
                         cause.getClass().getSimpleName().equals("ConsumerTimeoutException")) {
                     logger.warn("Migration thread failure due to consumer timeout", cause);
+                    context.setFailed(ErrorCode.CONSUMER_TIMEOUT);
                 } else {
                     logger.fatal("Migration thread failure due to root cause ", cause);
+                    context.setFailed();
                 }
-                context.setFailed();
             } catch (ProducerDataChannelTimeoutException e) {
                 // Log at warning level since what caused the producer data channel
                 // to throw is logged as error.
