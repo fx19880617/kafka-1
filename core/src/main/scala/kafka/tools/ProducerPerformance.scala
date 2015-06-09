@@ -244,7 +244,9 @@ object ProducerPerformance extends Logging {
         val seqId = config.initialMessageId + (messagesPerThread * threadId) + messageId
         generateMessageWithSeqId(topic, seqId, msgSize)
       } else {
-        new Array[Byte](msgSize)
+        val data = new Array[Byte](msgSize)
+        rand.nextBytes(data)
+        data
       }
     }
 
