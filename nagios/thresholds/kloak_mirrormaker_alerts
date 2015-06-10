@@ -12,12 +12,12 @@ critical_thresholds = {
 }
 
 checks = {
-    'max_lag_alert_mm_sjc1a' : 'movingAverage(averageSeries(servers.datapipe*.kafka.consumer.ConsumerFetcherManager.MaxLag.kloak-mirrormaker-sjc1a-*.Value),"15min")',
-    'consumer_messages_per_sec': 'movingAverage(averageSeries(servers.datapipe*.kafka.consumer.ConsumerTopicMetrics.MessagesPerSec.kloak-mirrormaker-sjc1a-*.OneMinuteRate),"15min")',
-    'rebalance_alert' : 'movingAverage(averageSeries(servers.datapipe*.kafka.consumer.ZookeeperConsumerConnector.RebalanceRateAndTime.*.OneMinuteRate),"15min")',
-    'record_queue_time' : 'movingAverage(maxSeries(exclude(servers.datapipe*.kafka.producer.producer-metrics.*.record-queue-time-avg, "test")),"15min")',
-    'producer_waiting_threads' : 'sumSeries(exclude(servers.datapipe*.kafka.producer.producer-metrics.*.waiting-threads, "test"))',
-    'consumer_owned_partition_count'    : 'movingAverage(averageSeries(servers.datapipe*.kafka.consumer.ZookeeperConsumerConnector.OwnedPartitionsCount.*.*.Value),"15min")',
+    'max_lag_alert_mm_sjc1a' : 'movingAverage(averageSeries(servers.kloakmm*.kafka.consumer.ConsumerFetcherManager.MaxLag.kloak-mirrormaker-sjc1a-*.Value),"15min")',
+    'consumer_messages_per_sec': 'movingAverage(averageSeries(servers.kloakmm*.kafka.consumer.ConsumerTopicMetrics.MessagesPerSec.kloak-mirrormaker-sjc1a-*.OneMinuteRate),"15min")',
+    'rebalance_alert' : 'movingAverage(averageSeries(servers.kloakmm*.kafka.consumer.ZookeeperConsumerConnector.RebalanceRateAndTime.*.OneMinuteRate),"15min")',
+    'record_queue_time' : 'movingAverage(maxSeries(exclude(servers.kloakmm*.kafka.producer.producer-metrics.*.record-queue-time-avg, "test")),"15min")',
+    'producer_waiting_threads' : 'sumSeries(exclude(servers.kloakmm*.kafka.producer.producer-metrics.*.waiting-threads, "test"))',
+    'consumer_owned_partition_count'    : 'movingAverage(averageSeries(servers.kloakmm*.kafka.consumer.ZookeeperConsumerConnector.OwnedPartitionsCount.*.*.Value),"15min")',
 }
 
 for check in checks:
