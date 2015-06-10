@@ -1,3 +1,3 @@
-graphite.absolute_threshold('movingAverage(maxSeries(stats.sjc1.migrator.kloak_b.rt-new_york.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_rt-new_york', warning_over=1000000, critical_over=3000000)
-graphite.absolute_threshold('movingAverage(maxSeries(stats.sjc1.migrator.kloak_b.rt-chicago.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_rt-chicago', warning_over=1000000, critical_over=3000000)
-graphite.absolute_threshold('movingAverage(maxSeries(stats.sjc1.migrator.kloak_b.rt-washington_DC.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_rt-washington_DC', warning_over=1000000, critical_over=3000000)
+graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.kloak_b.rt-new_york.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_rt-new_york', warning_over=1000000, critical_over=3000000)
+graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.kloak_b.rt-chicago.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_rt-chicago', warning_over=1000000, critical_over=3000000)
+graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.kloak_b.rt-washington_DC.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_rt-washington_DC', warning_over=1000000, critical_over=3000000)

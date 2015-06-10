@@ -2,7 +2,7 @@ import sys
 
 class Alerts:
 	  time = '"15min"'
-          def __init__(self, topic_name, warning=1000000, critical=3000000, dc="sjc1", env="kloak_a"):
+          def __init__(self, topic_name, warning=1000000, critical=3000000, dc="*", env="*"):
                      self.warning = warning
                      self.critical = critical
                      self.topic_name = topic_name
