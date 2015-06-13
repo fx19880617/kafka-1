@@ -12,7 +12,7 @@ critical_thresholds = {
 
 checks = {
     'leaderelection_alert' : 'sumSeries(servers.' + boxes + '.*.kafka.controller.ControllerStats.LeaderElectionRateAndTimeMs.1MinuteRate)',
-    'absolute_cluster_io_wait_time' : 'movingAverage(averageSeries(servers.' + boxes + '.disk.sda.await),"30min")',
+    #'absolute_cluster_io_wait_time' : 'movingAverage(averageSeries(servers.' + boxes + '.disk.sda.await),"30min")',
 }
 
 for check in checks:
