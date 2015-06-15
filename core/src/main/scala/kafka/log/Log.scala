@@ -81,6 +81,12 @@ class Log(val dir: File,
     },
     tags)
 
+  newGauge("LogStartTimestamp",
+    new Gauge[Long] {
+      def value = logStartTimestamp
+    },
+    tags)
+
   newGauge("LogStartOffset",
     new Gauge[Long] {
       def value = logStartOffset
@@ -495,6 +501,11 @@ class Log(val dir: File,
    * The size of the log in bytes
    */
   def size: Long = logSegments.map(_.size).sum
+
+   /**
+   * The earliest message timestamp in the log
+   */
+  def logStartTimestamp: Long = logSegments.head.created
 
    /**
    * The earliest message offset in the log
