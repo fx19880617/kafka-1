@@ -1,0 +1,3 @@
+graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.*.zendesk_tickets_first_filed.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_zendesk_tickets_first_filed', warning_over=1000000, critical_over=3000000)
+graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.*.zendesk_tickets_first_reply.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_zendesk_tickets_first_reply', warning_over=1000000, critical_over=3000000)
+graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.*.zendesk_tickets_first_resolved.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_zendesk_tickets_first_resolved', warning_over=1000000, critical_over=3000000)
