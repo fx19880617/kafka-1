@@ -176,7 +176,7 @@ part = 0
 file_ptr = None
 #have only 10 checks per file so that we don't time out
 for alert in alertList:
-     if(i%10 == 0):
+     if(i%5 == 0):
            if(file_ptr!=None):
                  file_ptr.close()
            file_ptr = open("./thresholds/kloak_migrator_lag_alerts_part_"+str(part),"w")  

@@ -1,0 +1,5 @@
+graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.*.sentinel_events_trip_request_features.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_sentinel_events_trip_request_features', warning_over=1000000, critical_over=3000000)
+graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.*.streamio_rtsearch.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_streamio_rtsearch', warning_over=1000000, critical_over=3000000)
+graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.*.territories_audit_territory.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_territories_audit_territory', warning_over=1000000, critical_over=3000000)
+graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.*.tools-access.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_tools-access', warning_over=1000000, critical_over=3000000)
+graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.*.toolshed_uberinternal_com-access.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_toolshed_uberinternal_com-access', warning_over=1000000, critical_over=3000000)

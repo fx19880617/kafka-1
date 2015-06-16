@@ -1,0 +1,5 @@
+graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.*.money_fraud_mastermind_signups.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_money_fraud_mastermind_signups', warning_over=1000000, critical_over=3000000)
+graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.*.money_fraud_sift_science.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_money_fraud_sift_science', warning_over=1000000, critical_over=3000000)
+graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.*.nagios_notifications.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_nagios_notifications', warning_over=1000000, critical_over=3000000)
+graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.*.notifier_notification_logs.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_notifier_notification_logs', warning_over=1000000, critical_over=3000000)
+graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.*.onboarding_artemis_event.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_onboarding_artemis_event', warning_over=1000000, critical_over=3000000)
