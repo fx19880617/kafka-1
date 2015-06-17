@@ -1,1 +1,5 @@
-graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.*.experiment_treatments.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_experiment_treatments', warning_over=1000000, critical_over=3000000)
+graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.*.notifier_notification_logs.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_notifier_notification_logs', warning_over=1000000, critical_over=3000000)
+graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.*.objectnode_object_insert_log.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_objectnode_object_insert_log', warning_over=1000000, critical_over=3000000)
+graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.*.p2_dashboard_xpert_survey_result.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_p2_dashboard_xpert_survey_result', warning_over=1000000, critical_over=3000000)
+graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.*.p2_wechat_events.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_p2_wechat_events', warning_over=1000000, critical_over=3000000)
+graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.*.p2_wechat_ids.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_p2_wechat_ids', warning_over=1000000, critical_over=3000000)

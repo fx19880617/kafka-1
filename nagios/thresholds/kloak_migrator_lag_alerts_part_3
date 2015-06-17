@@ -1,5 +1,5 @@
-graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.*.api_promotions_apply.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_api_promotions_apply', warning_over=1000000, critical_over=3000000)
 graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.*.api_signups.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_api_signups', warning_over=1000000, critical_over=3000000)
 graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.*.api_trip_create_params_no_gps.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_api_trip_create_params_no_gps', warning_over=1000000, critical_over=3000000)
 graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.*.api_trip_update_params.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_api_trip_update_params', warning_over=1000000, critical_over=3000000)
-graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.*.api_views_driver_devices_dissociations.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_api_views_driver_devices_dissociations', warning_over=1000000, critical_over=3000000)
+graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.*.api_user_export.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_api_user_export', warning_over=1000000, critical_over=3000000)
+graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.*.api_user_import.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_api_user_import', warning_over=1000000, critical_over=3000000)
