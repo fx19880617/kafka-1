@@ -79,7 +79,14 @@ private object MetricsReporter extends KafkaMetricsReporterMBean {
               case _ =>
             }
           })
-        case _ => // Not a [kafka.log].[Log].[Size] metric
+        case ("kafka.log", "Log", "LogStartTimestamp") =>
+          gauge.value match {
+            case value: Long =>
+              // capture earliest log timestamp and compute delta in seconds
+              sendToGraphite(epoch, sanitizeName(name), "delta " + (epoch - value / 1000))
+            case _ => logger.warn("Gauge is of wrong type: " + gauge)
+          }
+        case _ =>
       }
 
       super.processGauge(name, gauge, epoch)
