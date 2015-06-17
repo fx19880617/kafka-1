@@ -1,5 +1,5 @@
+graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.*.uberchange_events.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_uberchange_events', warning_over=1000000, critical_over=3000000)
 graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.*.uberex_metrics.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_uberex_metrics', warning_over=1000000, critical_over=3000000)
 graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.*.uber_model_user_phone_verify.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_uber_model_user_phone_verify', warning_over=1000000, critical_over=3000000)
 graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.*.utunes_requested_tracks.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_utunes_requested_tracks', warning_over=1000000, critical_over=3000000)
 graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.*.vault_audit.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_vault_audit', warning_over=1000000, critical_over=3000000)
-graphite.absolute_threshold('movingAverage(maxSeries(stats.*.migrator.*.zendesk_tickets_first_filed.kafka_offset_lag.*),"15min")', alias='migrator_lag_alerts_zendesk_tickets_first_filed', warning_over=1000000, critical_over=3000000)
