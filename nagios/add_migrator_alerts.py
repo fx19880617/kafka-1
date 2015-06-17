@@ -190,6 +190,7 @@ Alerts("vault_audit",),
 Alerts("zendesk_tickets_first_filed",),
 Alerts("zendesk_tickets_first_reply",),
 Alerts("zendesk_tickets_first_resolved",),
+Alerts("experiment_treatments",),
          ]
 
 
