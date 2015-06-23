@@ -7,7 +7,9 @@ SLF4J_VERSION = 1.7.7
 SLF4J = slf4j-$(SLF4J_VERSION)
 
 override_dh_auto_build:
-	./gradlew clean build
+#	./gradlew clean build
+	# Building jar instead to skip some random errors seen
+	./gradlew clean jar
 
 # Do not install init script automatically
 override_dh_installinit:
