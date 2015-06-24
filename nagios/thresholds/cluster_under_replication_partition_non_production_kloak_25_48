@@ -1,1 +1,0 @@
-graphite.absolute_threshold('highestMax(movingAverage(servers.kloak{25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48}*.*.kafka.cluster.Partition.UnderReplicated.*.*.value,"30min"),1)',alias='cluster_under_replication_partition_non_production_kloak_25_48',warning_over=None,critical_over=0.99)
