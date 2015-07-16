@@ -61,6 +61,7 @@ alertList = [
           Alerts('cluster_under_replication_partition_dd','highestMax(movingAverage(servers.boxes.*.kafka.cluster.Partition.UnderReplicated.*.??.value,"30min"),1)',1,8,24,0.99,None),
           Alerts('cluster_under_replication_partition_td','highestMax(movingAverage(servers.boxes.*.kafka.cluster.Partition.UnderReplicated.*.???.value,"30min"),1)',1,8,24,0.99,None),
           Alerts('cluster_under_replication_partition_non_production_kloak','highestMax(movingAverage(servers.boxes.*.kafka.cluster.Partition.UnderReplicated.*.*.value,"30min"),1)',25,24,48,0.99,None),
+          Alerts('cluster_under_replication_partition_beehive_kloak','highestMax(movingAverage(servers.boxes.*.kafka.cluster.Partition.UnderReplicated.*.*.value,"30min"),1)',49,8,56,0.99,None),
          ]
 
 #clear all files
