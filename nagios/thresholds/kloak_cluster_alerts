@@ -16,10 +16,10 @@ critical_thresholds = {
 }
 
 checks = {
-    'cluster_under_replication_a' : 'movingAverage(maxSeries(servers.kloak*.kloak*a.kafka.server.ReplicaManager.UnderReplicatedPartitions.value),"15min")',
-    'cluster_under_replication_b' : 'movingAverage(maxSeries(servers.kloak*.kloak*b.server.ReplicaManager.UnderReplicatedPartitions.value),"15min")',
-    'cluster_under_replication_c' : 'movingAverage(maxSeries(servers.kloak*.kloak*c.server.ReplicaManager.UnderReplicatedPartitions.value),"15min")',
-    'cluster_under_replication_agg' : 'movingAverage(maxSeries(servers.kloak*.kloak*agg1.kafka.server.ReplicaManager.UnderReplicatedPartitions.value),"15min")',
+    'cluster_under_replication_a' : 'movingAverage(maxSeries(servers.kloak*.kloak*a.kafka.server.ReplicaManager.UnderReplicatedPartitions.value),"30min")',
+    'cluster_under_replication_b' : 'movingAverage(maxSeries(servers.kloak*.kloak*b.server.ReplicaManager.UnderReplicatedPartitions.value),"30min")',
+    'cluster_under_replication_c' : 'movingAverage(maxSeries(servers.kloak*.kloak*c.server.ReplicaManager.UnderReplicatedPartitions.value),"30min")',
+    'cluster_under_replication_agg' : 'movingAverage(maxSeries(servers.kloak*.kloak*agg1.kafka.server.ReplicaManager.UnderReplicatedPartitions.value),"30min")',
 }
 
 for check in checks:
