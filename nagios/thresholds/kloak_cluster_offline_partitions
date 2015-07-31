@@ -1,0 +1,27 @@
+## vim: set ft=python
+boxes = 'kloak*'
+
+warn_thresholds = {
+    'cluster_offline_partition_count_a' : 0,
+    'cluster_offline_partition_count_b' : 0,
+    'cluster_offline_partition_count_c' : 0,
+    'cluster_offline_partition_count_agg' : 0,
+}
+
+critical_thresholds = {
+    'cluster_offline_partition_count_a' : 0,
+    'cluster_offline_partition_count_b' : 0,
+    'cluster_offline_partition_count_c' : 0,
+    'cluster_offline_partition_count_agg' : 0,
+}
+
+checks = {
+    'cluster_offline_partition_count_a'   : 'movingAverage(maxSeries(servers.kloak*.kloak*a.kafka.controller.KafkaController.OfflinePartitionsCount.value),"30min")',
+    'cluster_offline_partition_count_b'   : 'movingAverage(maxSeries(servers.kloak*.kloak*b.kafka.controller.KafkaController.OfflinePartitionsCount.value),"30min")',
+    'cluster_offline_partition_count_c'   : 'movingAverage(maxSeries(servers.kloak*.kloak*c.kafka.controller.KafkaController.OfflinePartitionsCount.value),"30min")',
+    'cluster_offline_partition_count_agg' : 'movingAverage(maxSeries(servers.kloak*.kloak*agg1.kafka.controller.KafkaController.OfflinePartitionsCount.value),"30min")',
+}
+
+for check in checks:
+    graphite.absolute_threshold(checks[check], alias=check, warning_over=warn_thresholds.get(check), critical_over=critical_thresholds.get(check))
+
