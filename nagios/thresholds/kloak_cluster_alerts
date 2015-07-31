@@ -2,17 +2,19 @@
 boxes = 'kloak*'
 
 warn_thresholds = {
-    'cluster_under_replication_a' : 2,
-    'cluster_under_replication_b' : 2,
-    'cluster_under_replication_c' : 2,
-    'cluster_under_replication_agg' : 2,
+    'cluster_under_replication_a' : 1,
+    'cluster_under_replication_b' : 1,
+    'cluster_under_replication_c' : 1,
+    'cluster_under_replication_agg' : 1,
+    'cluster_under_replication_streamio' : 1,
 }
 
 critical_thresholds = {
-    'cluster_under_replication_a' : 5,
-    'cluster_under_replication_b' : 5,
-    'cluster_under_replication_c' : 5,
-    'cluster_under_replication_agg' : 5,
+    'cluster_under_replication_a' : 0,
+    'cluster_under_replication_b' : 0,
+    'cluster_under_replication_c' : 0,
+    'cluster_under_replication_agg' : 0,
+    'cluster_under_replication_streamio' : 0,
 }
 
 checks = {
@@ -20,6 +22,7 @@ checks = {
     'cluster_under_replication_b' : 'movingAverage(maxSeries(servers.kloak*.kloak*b.server.ReplicaManager.UnderReplicatedPartitions.value),"30min")',
     'cluster_under_replication_c' : 'movingAverage(maxSeries(servers.kloak*.kloak*c.server.ReplicaManager.UnderReplicatedPartitions.value),"30min")',
     'cluster_under_replication_agg' : 'movingAverage(maxSeries(servers.kloak*.kloak*agg1.kafka.server.ReplicaManager.UnderReplicatedPartitions.value),"30min")',
+    'cluster_under_replication_streamio' : 'movingAverage(maxSeries(servers.kloak*.*streamio.kafka.server.ReplicaManager.UnderReplicatedPartitions.value),"30min")',
 }
 
 for check in checks:
