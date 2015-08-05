@@ -2,19 +2,19 @@
 boxes = 'kloak*'
 
 warn_thresholds = {
-    'cluster_under_replication_a' : 1,
-    'cluster_under_replication_b' : 1,
-    'cluster_under_replication_c' : 1,
-    'cluster_under_replication_agg' : 1,
-    'cluster_under_replication_streamio' : 1,
-}
-
-critical_thresholds = {
     'cluster_under_replication_a' : 0,
     'cluster_under_replication_b' : 0,
     'cluster_under_replication_c' : 0,
     'cluster_under_replication_agg' : 0,
     'cluster_under_replication_streamio' : 0,
+}
+
+critical_thresholds = {
+    'cluster_under_replication_a' : 1,
+    'cluster_under_replication_b' : 1,
+    'cluster_under_replication_c' : 1,
+    'cluster_under_replication_agg' : 1,
+    'cluster_under_replication_streamio' : 1,
 }
 
 checks = {
