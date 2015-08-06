@@ -1,23 +1,24 @@
 warn_thresholds = {
     'max_lag_alert_mm_sjc1a' : 2000000,
-    'consumer_messages_per_sec' : 1000000,
+    'max_lag_alert_mm_dca1a' : 2000000,
+    'max_lag_alert_mm_pek1a' : 2000000,
 }
 
 critical_thresholds = {
     'max_lag_alert_mm_sjc1a' : 2500000,
-    'consumer_messages_per_sec': 1500000,
-    'rebalance_alert' : 0,
+    'max_lag_alert_mm_dca1a' : 2500000,
+    'max_lag_alert_mm_pek1a' : 2500000,
     'record_queue_time' : 700,
     'producer_waiting_threads' : 5,
 }
 
 checks = {
-    'max_lag_alert_mm_sjc1a' : 'movingAverage(averageSeries(servers.kloakmm*.kafka.consumer.ConsumerFetcherManager.MaxLag.kloak-mirrormaker-sjc1a-*.Value),"15min")',
-    'consumer_messages_per_sec': 'movingAverage(averageSeries(servers.kloakmm*.kafka.consumer.ConsumerTopicMetrics.MessagesPerSec.kloak-mirrormaker-sjc1a-*.OneMinuteRate),"15min")',
-    'rebalance_alert' : 'movingAverage(averageSeries(servers.kloakmm*.kafka.consumer.ZookeeperConsumerConnector.RebalanceRateAndTime.*.OneMinuteRate),"15min")',
-    'record_queue_time' : 'movingAverage(maxSeries(exclude(servers.kloakmm*.kafka.producer.producer-metrics.*.record-queue-time-avg, "test")),"15min")',
+    'max_lag_alert_mm_sjc1a' : 'movingAverage(averageSeries(servers.kloakmm*.kafka.consumer.ConsumerFetcherManager.MaxLag.kloak-mirrormaker-sjc1a-*.Value),"5min")',
+    'max_lag_alert_mm_dca1a' : 'movingAverage(averageSeries(servers.kloakmm*.kafka.consumer.ConsumerFetcherManager.MaxLag.kloak-mirrormaker-dca1a-*.Value),"5min")',
+    'max_lag_alert_mm_pek1a' : 'movingAverage(averageSeries(servers.kloakmm*.kafka.consumer.ConsumerFetcherManager.MaxLag.kloak-mirrormaker-pek1a-*.Value),"5min")',
+    'record_queue_time'      : 'movingAverage(maxSeries(exclude(servers.kloakmm*.kafka.producer.producer-metrics.*.record-queue-time-avg, "test")),"15min")',
     'producer_waiting_threads' : 'sumSeries(exclude(servers.kloakmm*.kafka.producer.producer-metrics.*.waiting-threads, "test"))',
-    'consumer_owned_partition_count'    : 'movingAverage(averageSeries(servers.kloakmm*.kafka.consumer.ZookeeperConsumerConnector.OwnedPartitionsCount.*.*.Value),"15min")',
+    'consumer_owned_partition_count' : 'movingAverage(averageSeries(servers.kloakmm*.kafka.consumer.ZookeeperConsumerConnector.OwnedPartitionsCount.*.*.Value),"15min")',
 }
 
 for check in checks:
