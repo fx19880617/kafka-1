@@ -34,6 +34,14 @@ status, text = getstatusoutput("ssh kloakzk03-sjc1 'zkcli ls /kloak-sjc1-agg1/br
 if topic in text:
    print "topic in kloak-agg"
 
+status, text = getstatusoutput("ssh kloakzk01-pek1 'zkcli ls /kloak-pek1a/brokers/topics'")
+if topic in text:
+   print "topic in kloak-pek1a"
+
+status, text = getstatusoutput("ssh kloakzk01-pek1 'zkcli ls /kloak-pek1b/brokers/topics'")
+if topic in text:
+   print "topic in kloak-pek1b"
+
 #check if the topic exists in the kafka 7 world
 print "checking for the topic in the kafka 7 world...."
 
