@@ -10,21 +10,20 @@ warn_thresholds = {
 }
 
 critical_thresholds = {
-    'cluster_under_replication_a' : 1,
-    'cluster_under_replication_b' : 1,
-    'cluster_under_replication_c' : 1,
-    'cluster_under_replication_agg' : 1,
-    'cluster_under_replication_streamio' : 1,
+    'cluster_under_replication_a' : 0,
+    'cluster_under_replication_b' : 0,
+    'cluster_under_replication_c' : 0,
+    'cluster_under_replication_agg' : 0,
+    'cluster_under_replication_streamio' : 0,
 }
 
 checks = {
-    'cluster_under_replication_a' : 'movingAverage(maxSeries(servers.kloak*.kloak*a.kafka.server.ReplicaManager.UnderReplicatedPartitions.value),"30min")',
-    'cluster_under_replication_b' : 'movingAverage(maxSeries(servers.kloak*.kloak*b.server.ReplicaManager.UnderReplicatedPartitions.value),"30min")',
-    'cluster_under_replication_c' : 'movingAverage(maxSeries(servers.kloak*.kloak*c.server.ReplicaManager.UnderReplicatedPartitions.value),"30min")',
-    'cluster_under_replication_agg' : 'movingAverage(maxSeries(servers.kloak*.kloak*agg1.kafka.server.ReplicaManager.UnderReplicatedPartitions.value),"30min")',
-    'cluster_under_replication_streamio' : 'movingAverage(maxSeries(servers.kloak*.*streamio.kafka.server.ReplicaManager.UnderReplicatedPartitions.value),"30min")',
+    'cluster_under_replication_a' : 'summarize(sumSeries(servers.*.kloak-sjc1a.kafka.server.ReplicaManager.UnderReplicatedPartitions.value), '30min', 'min', true)',
+    'cluster_under_replication_b' : 'summarize(sumSeries(servers.*.kloak-sjc1b.kafka.server.ReplicaManager.UnderReplicatedPartitions.value), '30min', 'min', true)',
+    'cluster_under_replication_c' : 'summarize(sumSeries(servers.*.kloak-sjc1c.kafka.server.ReplicaManager.UnderReplicatedPartitions.value), '30min', 'min', true)',
+    'cluster_under_replication_agg' : 'summarize(sumSeries(servers.*.kloak-sjc1-agg1.kafka.server.ReplicaManager.UnderReplicatedPartitions.value), '30min', 'min', true)',
+    'cluster_under_replication_streamio' : 'summarize(sumSeries(servers.*.kloak-sjc1-streamio1.kafka.server.ReplicaManager.UnderReplicatedPartitions.value), '30min', 'min', true)',
 }
 
 for check in checks:
     graphite.absolute_threshold(checks[check], alias=check, warning_over=warn_thresholds.get(check), critical_over=critical_thresholds.get(check))
-
