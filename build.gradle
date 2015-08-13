@@ -216,6 +216,7 @@ project(':core') {
     compile 'com.101tec:zkclient:0.5'
     compile 'com.yammer.metrics:metrics-core:2.2.0'
     compile 'net.sf.jopt-simple:jopt-simple:3.2'
+    compile 'org.yaml:snakeyaml:1.8'
 
     runtime 'org.jmxtrans.agent:jmxtrans-agent:1.0.8'
 

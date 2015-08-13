@@ -21,7 +21,10 @@ import java.util
 import java.util.concurrent.{TimeUnit, CountDownLatch}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 import java.util.{Collections, Properties}
+import java.io.{File, FileInputStream}
 import scala.io.Source
+import org.yaml.snakeyaml.Yaml
+
 
 import com.yammer.metrics.core.Gauge
 import joptsimple.OptionParser
@@ -113,6 +116,12 @@ object MirrorMaker extends Logging with KafkaMetricsGroup {
       .describedAs("Java regex (String)")
       .ofType(classOf[String])
 
+    val whitelistfileOpt = parser.accepts("whitelistfile",
+       "File name with white list of topics to mirror.")
+       .withRequiredArg()
+       .describedAs("File Name (String)")
+       .ofType(classOf[String])
+
     val offsetCommitIntervalMsOpt = parser.accepts("offset.commit.interval.ms",
       "Offset commit interval in ms")
       .withRequiredArg()
@@ -171,8 +180,8 @@ object MirrorMaker extends Logging with KafkaMetricsGroup {
     }
 
     CommandLineUtils.checkRequiredArgs(parser, options, consumerConfigOpt, producerConfigOpt)
-    if (List(whitelistOpt, blacklistOpt).count(options.has) != 1) {
-      println("Exactly one of whitelist or blacklist is required.")
+    if (List(whitelistfileOpt, whitelistOpt, blacklistOpt).count(options.has) != 1) {
+      println("Exactly one of whitelist or blacklist or whitelistfile is required.")
       System.exit(1)
     }
 
@@ -233,6 +242,8 @@ object MirrorMaker extends Logging with KafkaMetricsGroup {
     // create filters
     val filterSpec = if (options.has(whitelistOpt))
       new Whitelist(options.valueOf(whitelistOpt))
+    else if  (options.has(whitelistfileOpt))
+      new Whitelist(parseYaml(options.valueOf(whitelistfileOpt).toString()))
     else
       new Blacklist(options.valueOf(blacklistOpt))
 
@@ -273,6 +284,20 @@ object MirrorMaker extends Logging with KafkaMetricsGroup {
 
     mirrorMakerThreads.foreach(_.start())
     mirrorMakerThreads.foreach(_.awaitShutdown())
+  }
+
+def parseYaml(file_name: String): String = {
+    val ios = new FileInputStream(new File(file_name))
+    try {
+      val obj = new Yaml().load(ios).asInstanceOf[java.util.Map[String, java.util.ArrayList[String]]]
+      debug("Using whitelistfile:" + file_name  + " with topics:" + obj.get("whitelist"))
+      return obj.get("whitelist").mkString("|")
+    }
+    finally {
+       if (ios != null) {
+         ios.close()
+       }
+    }
   }
 
   def commitOffsets(connector: ZookeeperConsumerConnector) {
