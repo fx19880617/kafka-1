@@ -1,0 +1,39 @@
+## vim: set ft=python
+boxes = 'kloak*'
+
+warn_thresholds = {
+    'kloak_cluster_cpu_wild_sjc1_a' : 50,
+    'kloak_cluster_cpu_wild_sjc1_b' : 50,
+    'kloak_cluster_cpu_wild_sjc1_c' : 50,
+    'kloak_cluster_cpu_wild_sjc1_agg' : 50,
+    'kloak_cluster_cpu_wild_dca1_a' : 50,
+    'kloak_cluster_cpu_wild_dca1_b' : 50,
+    'kloak_cluster_cpu_wild_pek1_a' : 50,
+    'kloak_cluster_cpu_wild_pek1_b' : 50,
+}
+
+critical_thresholds = {
+    'kloak_cluster_cpu_wild_sjc1_a' : 25,
+    'kloak_cluster_cpu_wild_sjc1_b' : 25,
+    'kloak_cluster_cpu_wild_sjc1_c' : 25,
+    'kloak_cluster_cpu_wild_sjc1_agg' : 25,
+    'kloak_cluster_cpu_wild_dca1_a' : 25,
+    'kloak_cluster_cpu_wild_dca1_b' : 25,
+    'kloak_cluster_cpu_wild_pek1_a' : 25,
+    'kloak_cluster_cpu_wild_pek1_b' : 25,
+}
+
+checks = {
+    'kloak_cluster_cpu_wild_sjc1_a'   : 'minSeries(summarize(transformNull(servers.kloak{01,02,03,04,05,06,07,08}-sjc1.cpu.idle, 0), '15m', 'min'))',
+    'kloak_cluster_cpu_wild_sjc1_b'   : 'minSeries(summarize(transformNull(servers.kloak{09,10,11,12,13,14,15,16}-sjc1.cpu.idle, 0), '15m', 'min'))',
+    'kloak_cluster_cpu_wild_sjc1_c'   : 'minSeries(summarize(transformNull(servers.kloak{49,50,51,52,53,54,55,56}-sjc1.cpu.idle, 0), '15m', 'min'))',
+    'kloak_cluster_cpu_wild_sjc1_agg'   : 'minSeries(summarize(transformNull(servers.kloak{17,18,19,20,21,22,23,24}-sjc1.cpu.idle, 0), '15m', 'min'))',
+    'kloak_cluster_cpu_wild_dca1_a'   : 'minSeries(summarize(transformNull(servers.kloak{01,02,03,04,05,06,07,08}-dca1.cpu.idle, 0), '15m', 'min'))',
+    'kloak_cluster_cpu_wild_dca1_b'   : 'minSeries(summarize(transformNull(servers.kloak{09,10,11,12,13,14,15,16}-dca1.cpu.idle, 0), '15m', 'min'))',
+    'kloak_cluster_cpu_wild_pek1_a'   : 'minSeries(summarize(transformNull(servers.kloak{01,02,03,04,05,06,07,08}-pek1.cpu.idle, 0), '15m', 'min'))',
+    'kloak_cluster_cpu_wild_pek1_b'   : 'minSeries(summarize(transformNull(servers.kloak{09,10,11,12,13,14,15,16}-pek1.cpu.idle, 0), '15m', 'min'))',    
+}
+
+for check in checks:
+    graphite.absolute_threshold(checks[check], alias=check, warning_under=warn_thresholds.get(check), critical_under=critical_thresholds.get(check))
+
