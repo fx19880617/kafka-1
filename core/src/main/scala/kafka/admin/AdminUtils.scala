@@ -196,6 +196,7 @@ object AdminUtils extends Logging {
   * @param config Pre-existing properties that should be preserved
   */
   def addPartitions(zkClient: ZkClient,
+                    brokerList: Seq[Int],
                     topic: String,
                     numPartitions: Int = 1,
                     replicaAssignmentStr: String = "",
@@ -210,8 +211,6 @@ object AdminUtils extends Logging {
     if (partitionsToAdd <= 0)
       throw new AdminOperationException("The number of partitions for a topic can only be increased")
 
-    // create the new partition replication list
-    val brokerList = ZkUtils.getSortedBrokerList(zkClient)
     val newPartitionReplicaList = if (replicaAssignmentStr == null || replicaAssignmentStr == "")
       AdminUtils.assignReplicasToBrokers(brokerList, partitionsToAdd, existingReplicaList.size, existingReplicaList.head, existingPartitionsReplicaList.size)
     else

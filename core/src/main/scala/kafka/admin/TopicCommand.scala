@@ -118,7 +118,14 @@ object TopicCommand {
           "logic or ordering of the messages will be affected")
         val nPartitions = opts.options.valueOf(opts.partitionsOpt).intValue
         val replicaAssignmentStr = opts.options.valueOf(opts.replicaAssignmentOpt)
-        AdminUtils.addPartitions(zkClient, topic, nPartitions, replicaAssignmentStr, config = configs)
+        // create the new partition replication list
+        if (opts.options.has(opts.brokerListOpt)) {
+          val brokerListToReassign = opts.options.valueOf(opts.brokerListOpt).split(',').map(_.toInt)
+          AdminUtils.addPartitions(zkClient, brokerListToReassign, topic, nPartitions, replicaAssignmentStr, config = configs)
+        } else {
+          val fullBrokerList = ZkUtils.getSortedBrokerList(zkClient)
+          AdminUtils.addPartitions(zkClient, fullBrokerList, topic, nPartitions, replicaAssignmentStr, config = configs)
+        }
         println("Adding partitions succeeded!")
       }
     }
@@ -273,6 +280,11 @@ object TopicCommand {
                            .withRequiredArg
                            .describedAs("# of partitions")
                            .ofType(classOf[java.lang.Integer])
+    val brokerListOpt = parser.accepts("broker-list", "The list of brokers to which the partitions need to be reassigned" +
+                           " in the form \"0,1,2\".")
+                           .withRequiredArg
+                           .describedAs("brokerlist")
+                           .ofType(classOf[String])
     val replicationFactorOpt = parser.accepts("replication-factor", "The replication factor for each partition in the topic being created.")
                            .withRequiredArg
                            .describedAs("replication factor")
