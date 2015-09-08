@@ -19,6 +19,7 @@ package kafka.admin
 import joptsimple.OptionParser
 import kafka.utils._
 import collection._
+import java.io._
 import org.I0Itec.zkclient.ZkClient
 import org.I0Itec.zkclient.exception.ZkNodeExistsException
 import kafka.common.{TopicAndPartition, AdminCommandFailedException}
@@ -31,9 +32,9 @@ object ReassignPartitionsCommand extends Logging {
     val opts = new ReassignPartitionsCommandOptions(args)
 
     // should have exactly one action
-    val actions = Seq(opts.generateOpt, opts.executeOpt, opts.verifyOpt).count(opts.options.has _)
+    val actions = Seq(opts.generateOpt, opts.executeOpt, opts.verifyOpt, opts.rebalancePlanOpt).count(opts.options.has _)
     if(actions != 1)
-      CommandLineUtils.printUsageAndDie(opts.parser, "Command must include exactly one action: --generate, --execute or --verify")
+      CommandLineUtils.printUsageAndDie(opts.parser, "Command must include exactly one action: --generate, --execute, --verify or --rebalance-plan")
 
     CommandLineUtils.checkRequiredArgs(opts.parser, opts.options, opts.zkConnectOpt)
 
@@ -42,7 +43,9 @@ object ReassignPartitionsCommand extends Logging {
     try {
       if(opts.options.has(opts.verifyOpt))
         verifyAssignment(zkClient, opts)
-      else if(opts.options.has(opts.generateOpt))
+      else if (opts.options.has(opts.rebalancePlanOpt))
+        generateRebalanceAssignment(zkClient, opts)
+      else if (opts.options.has(opts.generateOpt))
         generateAssignment(zkClient, opts)
       else if (opts.options.has(opts.executeOpt))
         executeAssignment(zkClient, opts)
@@ -103,6 +106,52 @@ object ReassignPartitionsCommand extends Logging {
     println("Current partition replica assignment\n\n%s"
       .format(ZkUtils.getPartitionReassignmentZkData(currentPartitionReplicaAssignment)))
     println("Proposed partition reassignment configuration\n\n%s".format(ZkUtils.getPartitionReassignmentZkData(partitionsToBeReassigned)))
+  }
+
+  def generateRebalanceAssignment(zkClient: ZkClient, opts: ReassignPartitionsCommandOptions) {
+    if (!(opts.options.has(opts.topicToRebalanceOpt) && opts.options.has(opts.brokerListOpt)))
+      CommandLineUtils.printUsageAndDie(opts.parser, "If --rebalance-plan option is used, command must include both --topic-to-rebalance and --broker-list options")
+    val topicToRebalance = opts.options.valueOf(opts.topicToRebalanceOpt)
+    
+    val brokerListToReassign = opts.options.valueOf(opts.brokerListOpt).split(',').map(_.toInt)
+    val debug = opts.options.has(opts.debugOpt)
+    val outputToFile = opts.options.has(opts.outputPlanJsonFileOpt)
+    var outputPlanJsonFile = ""
+    if (outputToFile) {
+       outputPlanJsonFile = opts.options.valueOf(opts.outputPlanJsonFileOpt)
+    }
+    val duplicateReassignments = CoreUtils.duplicates(brokerListToReassign)
+    if (duplicateReassignments.nonEmpty)
+      throw new AdminCommandFailedException("Broker list contains duplicate entries: %s".format(duplicateReassignments.mkString(",")))
+    val topicPartitionsToReassign = ZkUtils.getReplicaAssignmentForTopics(zkClient, Seq[String](topicToRebalance))
+
+    var partitionsToBeReassigned1: Map[TopicAndPartition, Seq[Int]] = new mutable.HashMap[TopicAndPartition, List[Int]]()
+    val groupedByTopic1 = topicPartitionsToReassign.groupBy(tp => tp._1.topic)
+    groupedByTopic1.foreach { topicInfo =>
+      val assignedReplicas = AdminUtils.assignReplicasToBrokers(brokerListToReassign, topicInfo._2.size,
+        topicInfo._2.head._2.size)
+      partitionsToBeReassigned1 ++= assignedReplicas.map(replicaInfo => (TopicAndPartition(topicInfo._1, replicaInfo._1) -> replicaInfo._2))
+    }
+    val currentPartitionReplicaAssignment = ZkUtils.getReplicaAssignmentForTopics(zkClient, partitionsToBeReassigned1.map(_._1.topic).toSeq)
+    
+    
+    var partitionsToBeReassigned: Map[TopicAndPartition, Seq[Int]] = new mutable.HashMap[TopicAndPartition, List[Int]]()
+    println("Current partition replica assignment\n\n%s"
+      .format(ZkUtils.getPartitionReassignmentZkData(currentPartitionReplicaAssignment)))
+      
+    val groupedByTopic = topicPartitionsToReassign.groupBy(tp => tp._1.topic)
+    groupedByTopic.foreach { topicInfo =>
+      val assignedReplicas = AdminUtils.rebalanceReplicasToBrokers(brokerListToReassign, topicInfo._2.size,
+        topicInfo._2.head._2.size, currentPartitionReplicaAssignment.map(topicPartitonInfo => topicPartitonInfo._1.partition -> topicPartitonInfo._2 ), debug)
+      partitionsToBeReassigned ++= assignedReplicas.map(replicaInfo => (TopicAndPartition(topicInfo._1, replicaInfo._1) -> replicaInfo._2))
+    }
+    println("Proposed partition reassignment configuration\n\n%s".format(ZkUtils.getPartitionReassignmentZkData(partitionsToBeReassigned)))
+    if (outputToFile) {
+      val pw = new java.io.PrintWriter(new File(outputPlanJsonFile))
+      try {
+        pw.write(ZkUtils.getPartitionReassignmentZkData(partitionsToBeReassigned)) 
+      } finally { pw.close()}
+    }
   }
 
   def executeAssignment(zkClient: ZkClient, opts: ReassignPartitionsCommandOptions) {
@@ -170,32 +219,44 @@ object ReassignPartitionsCommand extends Logging {
     val parser = new OptionParser
 
     val zkConnectOpt = parser.accepts("zookeeper", "REQUIRED: The connection string for the zookeeper connection in the " +
-                      "form host:port. Multiple URLS can be given to allow fail-over.")
-                      .withRequiredArg
-                      .describedAs("urls")
-                      .ofType(classOf[String])
+				      "form host:port. Multiple URLS can be given to allow fail-over.")
+				      .withRequiredArg
+				      .describedAs("urls")
+				      .ofType(classOf[String])
     val generateOpt = parser.accepts("generate", "Generate a candidate partition reassignment configuration." +
       " Note that this only generates a candidate assignment, it does not execute it.")
+    val rebalancePlanOpt = parser.accepts("rebalance-plan", "Generate a candidate partition reassignment configuration for rebalancing existed assignment." +
+      " Note that this only generates a candidate assignment, it does not execute it.")
+    val debugOpt = parser.accepts("debug", "Print more debug info.")
+    
     val executeOpt = parser.accepts("execute", "Kick off the reassignment as specified by the --reassignment-json-file option.")
     val verifyOpt = parser.accepts("verify", "Verify if the reassignment completed as specified by the --reassignment-json-file option.")
     val reassignmentJsonFileOpt = parser.accepts("reassignment-json-file", "The JSON file with the partition reassignment configuration" +
-                      "The format to use is - \n" +
-                      "{\"partitions\":\n\t[{\"topic\": \"foo\",\n\t  \"partition\": 1,\n\t  \"replicas\": [1,2,3] }],\n\"version\":1\n}")
-                      .withRequiredArg
-                      .describedAs("manual assignment json file path")
-                      .ofType(classOf[String])
+				      "The format to use is - \n" +
+				      "{\"partitions\":\n\t[{\"topic\": \"foo\",\n\t  \"partition\": 1,\n\t  \"replicas\": [1,2,3] }],\n\"version\":1\n}")
+				      .withRequiredArg
+				      .describedAs("manual assignment json file path")
+				      .ofType(classOf[String])
+    val outputPlanJsonFileOpt = parser.accepts("output-plan-json-file", "Generate a reassignment plan")
+				      .withRequiredArg
+				      .describedAs("output json file path for reassignment plan")
+				      .ofType(classOf[String])
+    val topicToRebalanceOpt = parser.accepts("topic-to-rebalance", "Topic to rebalance")
+				      .withRequiredArg
+				      .describedAs("topic to do rebalancing")
+				      .ofType(classOf[String])
     val topicsToMoveJsonFileOpt = parser.accepts("topics-to-move-json-file", "Generate a reassignment configuration to move the partitions" +
-                      " of the specified topics to the list of brokers specified by the --broker-list option. The format to use is - \n" +
-                      "{\"topics\":\n\t[{\"topic\": \"foo\"},{\"topic\": \"foo1\"}],\n\"version\":1\n}")
-                      .withRequiredArg
-                      .describedAs("topics to reassign json file path")
-                      .ofType(classOf[String])
+				      " of the specified topics to the list of brokers specified by the --broker-list option. The format to use is - \n" +
+				      "{\"topics\":\n\t[{\"topic\": \"foo\"},{\"topic\": \"foo1\"}],\n\"version\":1\n}")
+				      .withRequiredArg
+				      .describedAs("topics to reassign json file path")
+				      .ofType(classOf[String])
     val brokerListOpt = parser.accepts("broker-list", "The list of brokers to which the partitions need to be reassigned" +
-                      " in the form \"0,1,2\". This is required if --topics-to-move-json-file is used to generate reassignment configuration")
-                      .withRequiredArg
-                      .describedAs("brokerlist")
-                      .ofType(classOf[String])
-                      
+				      " in the form \"0,1,2\". This is required if --topics-to-move-json-file is used to generate reassignment configuration")
+				      .withRequiredArg
+				      .describedAs("brokerlist")
+				      .ofType(classOf[String])
+
     if(args.length == 0)
       CommandLineUtils.printUsageAndDie(parser, "This command moves topic partitions between replicas.")
 

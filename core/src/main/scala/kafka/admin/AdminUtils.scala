@@ -94,6 +94,96 @@ object AdminUtils extends Logging {
     ret.toMap
   }
 
+  /**
+   * The pre-assumption here is, we are doing cluster expansion. And all the old brokers have
+   * to be in the new brokers list.
+   * 
+   * There is only one goal to do partitions rebalancing: minimize number of partitions movement.
+   * To achieve this goal, we:
+   * 1. Get the old brokers to partitions mapping
+   * 2. Use priority queue to move partitions from brokers with more partitions to brokers with less partitions
+   * 3. Then end condition is number of minimal and maximal partitions diff is smaller than 2.
+   *
+   */
+  def rebalanceReplicasToBrokers(brokerList: Seq[Int],
+                                nPartitions: Int,
+                                replicationFactor: Int,
+                                currentAssignment: Map[Int,Seq[Int]],
+                                debug: Boolean): Map[Int, Seq[Int]] = {
+    if (nPartitions <= 0)
+      throw new AdminOperationException("number of partitions must be larger than 0")
+    if (replicationFactor <= 0)
+      throw new AdminOperationException("replication factor must be larger than 0")
+    if (replicationFactor > brokerList.size)
+      throw new AdminOperationException("replication factor: " + replicationFactor +
+        " larger than available brokers: " + brokerList.size)
+    val currentBrokerToPartitionMapping = mutable.Map.empty[Int, ListBuffer[Int]]
+    brokerList.foreach { brokerId =>
+      currentBrokerToPartitionMapping(brokerId) = new ListBuffer[Int]
+    }
+    currentAssignment.foreach(assignment =>
+      assignment._2.foreach { brokerId =>
+        currentBrokerToPartitionMapping(brokerId) += assignment._1
+      }
+    )
+    if (debug) {
+      brokerList.foreach { brokerId =>
+        println("Old BrokerToPartitionMapping: broker %s => partitions: [%s]".format(brokerId ,currentBrokerToPartitionMapping(brokerId))) 
+      }
+    }
+    def balancedDescOrdering(assignment: (Int,ListBuffer[Int])) = assignment._2.size
+    def balancedAscOrdering(assignment: (Int,ListBuffer[Int])) = assignment._2.size * -1
+    // BrokerId -> Seq(Partitions)
+    val assignmentToMoveOut = new collection.mutable.PriorityQueue[(Int, ListBuffer[Int])]()(Ordering.by(balancedDescOrdering))
+    val assignmentToMoveIn = new collection.mutable.PriorityQueue[(Int, ListBuffer[Int])]()(Ordering.by(balancedAscOrdering))
+    currentBrokerToPartitionMapping.foreach(mapping =>
+      assignmentToMoveOut.enqueue(mapping)
+    )
+    currentBrokerToPartitionMapping.foreach(mapping =>
+      assignmentToMoveIn.enqueue(mapping)
+    )
+    var totalMovedPartitions = 0;
+    while (assignmentToMoveOut.head._2.size - assignmentToMoveIn.head._2.size > 1) {
+      var headToMoveOut = assignmentToMoveOut.dequeue()
+      var headToMoveIn = assignmentToMoveIn.dequeue()
+      var parititonToMove = headToMoveOut._2(new Random(System.nanoTime()).nextInt(headToMoveOut._2.size))
+      while (headToMoveIn._2.contains(parititonToMove)) {
+        parititonToMove = headToMoveOut._2(new Random(System.nanoTime()).nextInt(headToMoveOut._2.size))
+      }
+      if (debug) {
+        println("Move partition %s from broker: %s to broker: %s".format(parititonToMove,headToMoveOut._1,headToMoveIn._1))
+      }
+      headToMoveOut._2 -= parititonToMove
+      headToMoveIn._2 += parititonToMove
+      assignmentToMoveOut.enqueue(headToMoveOut)
+      assignmentToMoveIn.enqueue(headToMoveIn)
+      totalMovedPartitions += 1;
+    }
+    if (debug) {
+      println("Total moved Partitions: %s".format(totalMovedPartitions))
+    }
+    // partitionId to ListBuffer[brokerId] mapping
+    val newPartitionToBrokersMap = mutable.Map.empty[Int, ListBuffer[Int]]
+    for (currentPartitionId <- 0 until nPartitions) {
+      newPartitionToBrokersMap.put(currentPartitionId, new ListBuffer[Int])
+    }
+    if (debug) {
+      brokerList.foreach { brokerId =>
+        println("New BrokerToPartitionMapping: broker %s => partitions: [%s]".format(brokerId ,currentBrokerToPartitionMapping(brokerId)))
+      }
+    }
+    currentBrokerToPartitionMapping.foreach(mapping =>
+      mapping._2.foreach { partitionId =>
+        newPartitionToBrokersMap(partitionId) += mapping._1
+      }
+    )
+    val ret = new mutable.HashMap[Int, List[Int]]()
+    for (currentPartitionId <- 0 until nPartitions) {
+      ret.put(currentPartitionId, newPartitionToBrokersMap(currentPartitionId).toList)
+    }
+    ret.toMap
+  }
+
 
  /**
   * Add partitions to existing topic with optional replica assignment
