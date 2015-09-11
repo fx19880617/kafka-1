@@ -313,11 +313,11 @@ object AdminUtils extends Logging {
     zkClient.exists(ZkUtils.getTopicPath(topic))
     
   def createTopic(zkClient: ZkClient,
+                  brokerList: Seq[Int],
                   topic: String,
                   partitions: Int, 
                   replicationFactor: Int, 
                   topicConfig: Properties = new Properties) {
-    val brokerList = ZkUtils.getSortedBrokerList(zkClient)
     val replicaAssignment = AdminUtils.assignReplicasToBrokers(brokerList, partitions, replicationFactor)
     AdminUtils.createOrUpdateTopicPartitionAssignmentPathInZK(zkClient, topic, replicaAssignment, topicConfig)
   }

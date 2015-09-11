@@ -431,14 +431,16 @@ class KafkaApis(val requestChannel: RequestChannel,
                   Math.min(config.offsetsTopicReplicationFactor.toInt, aliveBrokers.length)
                 else
                   config.offsetsTopicReplicationFactor.toInt
-              AdminUtils.createTopic(zkClient, topic, config.offsetsTopicPartitions,
+              val brokerList = ZkUtils.getSortedBrokerList(zkClient)
+              AdminUtils.createTopic(zkClient, brokerList, topic, config.offsetsTopicPartitions,
                                      offsetsTopicReplicationFactor,
                                      offsetManager.offsetsTopicConfig)
               info("Auto creation of topic %s with %d partitions and replication factor %d is successful!"
                 .format(topic, config.offsetsTopicPartitions, offsetsTopicReplicationFactor))
             }
             else {
-              AdminUtils.createTopic(zkClient, topic, config.numPartitions, config.defaultReplicationFactor)
+              val brokerList = ZkUtils.getSortedBrokerList(zkClient)
+              AdminUtils.createTopic(zkClient, brokerList, topic, config.numPartitions, config.defaultReplicationFactor)
               info("Auto creation of topic %s with %d partitions and replication factor %d is successful!"
                    .format(topic, config.numPartitions, config.defaultReplicationFactor))
             }

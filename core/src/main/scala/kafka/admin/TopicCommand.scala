@@ -89,7 +89,14 @@ object TopicCommand {
       CommandLineUtils.checkRequiredArgs(opts.parser, opts.options, opts.partitionsOpt, opts.replicationFactorOpt)
       val partitions = opts.options.valueOf(opts.partitionsOpt).intValue
       val replicas = opts.options.valueOf(opts.replicationFactorOpt).intValue
-      AdminUtils.createTopic(zkClient, topic, partitions, replicas, configs)
+      // create the new partition replication list
+      if (opts.options.has(opts.brokerListOpt)) {
+        val brokerListToReassign = opts.options.valueOf(opts.brokerListOpt).split(',').map(_.toInt)
+        AdminUtils.createTopic(zkClient, brokerListToReassign, topic, partitions, replicas, configs)
+      } else {
+        val fullBrokerList = ZkUtils.getSortedBrokerList(zkClient)
+        AdminUtils.createTopic(zkClient, fullBrokerList, topic, partitions, replicas, configs)
+      }
     }
     println("Created topic \"%s\".".format(topic))
   }
