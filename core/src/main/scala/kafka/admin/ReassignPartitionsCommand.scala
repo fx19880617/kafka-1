@@ -125,14 +125,14 @@ object ReassignPartitionsCommand extends Logging {
       throw new AdminCommandFailedException("Broker list contains duplicate entries: %s".format(duplicateReassignments.mkString(",")))
     val topicPartitionsToReassign = ZkUtils.getReplicaAssignmentForTopics(zkClient, Seq[String](topicToRebalance))
 
-    var partitionsToBeReassigned1: Map[TopicAndPartition, Seq[Int]] = new mutable.HashMap[TopicAndPartition, List[Int]]()
-    val groupedByTopic1 = topicPartitionsToReassign.groupBy(tp => tp._1.topic)
-    groupedByTopic1.foreach { topicInfo =>
+    var currentPartitionsAssignment: Map[TopicAndPartition, Seq[Int]] = new mutable.HashMap[TopicAndPartition, List[Int]]()
+    val topicPartitionsToReassignGroupedByTopic = topicPartitionsToReassign.groupBy(tp => tp._1.topic)
+    topicPartitionsToReassignGroupedByTopic.foreach { topicInfo =>
       val assignedReplicas = AdminUtils.assignReplicasToBrokers(brokerListToReassign, topicInfo._2.size,
         topicInfo._2.head._2.size)
-      partitionsToBeReassigned1 ++= assignedReplicas.map(replicaInfo => (TopicAndPartition(topicInfo._1, replicaInfo._1) -> replicaInfo._2))
+      currentPartitionsAssignment ++= assignedReplicas.map(replicaInfo => (TopicAndPartition(topicInfo._1, replicaInfo._1) -> replicaInfo._2))
     }
-    val currentPartitionReplicaAssignment = ZkUtils.getReplicaAssignmentForTopics(zkClient, partitionsToBeReassigned1.map(_._1.topic).toSeq)
+    val currentPartitionReplicaAssignment = ZkUtils.getReplicaAssignmentForTopics(zkClient, currentPartitionsAssignment.map(_._1.topic).toSeq)
     
     
     var partitionsToBeReassigned: Map[TopicAndPartition, Seq[Int]] = new mutable.HashMap[TopicAndPartition, List[Int]]()

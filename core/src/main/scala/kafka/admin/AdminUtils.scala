@@ -136,11 +136,10 @@ object AdminUtils extends Logging {
     // BrokerId -> Seq(Partitions)
     val assignmentToMoveOut = new collection.mutable.PriorityQueue[(Int, ListBuffer[Int])]()(Ordering.by(balancedDescOrdering))
     val assignmentToMoveIn = new collection.mutable.PriorityQueue[(Int, ListBuffer[Int])]()(Ordering.by(balancedAscOrdering))
-    currentBrokerToPartitionMapping.foreach(mapping =>
-      assignmentToMoveOut.enqueue(mapping)
-    )
-    currentBrokerToPartitionMapping.foreach(mapping =>
-      assignmentToMoveIn.enqueue(mapping)
+    currentBrokerToPartitionMapping.foreach(mapping => {
+        assignmentToMoveOut.enqueue(mapping)
+        assignmentToMoveIn.enqueue(mapping)
+      }
     )
     var totalMovedPartitions = 0;
     while (assignmentToMoveOut.head._2.size - assignmentToMoveIn.head._2.size > 1) {
@@ -167,10 +166,8 @@ object AdminUtils extends Logging {
     for (currentPartitionId <- 0 until nPartitions) {
       newPartitionToBrokersMap.put(currentPartitionId, new ListBuffer[Int])
     }
-    if (debug) {
-      brokerList.foreach { brokerId =>
-        println("New BrokerToPartitionMapping: broker %s => partitions: [%s]".format(brokerId ,currentBrokerToPartitionMapping(brokerId)))
-      }
+    brokerList.foreach { brokerId =>
+      println("New BrokerToPartitionMapping: broker %s => partitions: [%s]".format(brokerId ,currentBrokerToPartitionMapping(brokerId)))
     }
     currentBrokerToPartitionMapping.foreach(mapping =>
       mapping._2.foreach { partitionId =>
@@ -311,7 +308,7 @@ object AdminUtils extends Logging {
 
   def topicExists(zkClient: ZkClient, topic: String): Boolean = 
     zkClient.exists(ZkUtils.getTopicPath(topic))
-    
+
   def createTopic(zkClient: ZkClient,
                   brokerList: Seq[Int],
                   topic: String,
